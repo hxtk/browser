@@ -4,12 +4,11 @@
 #include <iostream>
 #include <cstdint>
 
-#include "tcp_stream.h"
+#include "net/tcp_stream.h"
 
 int main() {
   net::TcpStream ts;
   ts.Open("localhost", 8000);
-  ts.set_timeout(10000);
   uint32_t ip = ts.get_peer_ip();
   std::cout << "Connected to peer: "
             << (ip >> 24) << "."

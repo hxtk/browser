@@ -1,13 +1,7 @@
 // Copyright: Peter Sanders. All rights reserved.
 // Date: 2016-11-02
 
-#include "tcp_stream.h"
-
-#include <iostream>
-
-#include <string>
-#include <cstdint>
-#include <cstring>
+#include "net/tcp_stream.h"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -16,13 +10,18 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
+#include <initializer_list>
+#include <string>
+#include <cstdint>
+#include <cstring>
+
 using std::string;
 using addrinfo = struct addrinfo;
 
 namespace net {
 bool TcpStream::Send(const string& message) {
   if (!valid_) return false;
-  
+
   const char* buffer = message.c_str();
   int len_remaining = message.size();
   while (len_remaining > 0) {
@@ -30,8 +29,7 @@ bool TcpStream::Send(const string& message) {
         socket_,
         reinterpret_cast<const void*>(buffer + message.size() - len_remaining),
         len_remaining,
-        0  // flags
-    );
+        0);
     if (tmp == -1) {
       return false;
     } else {
@@ -43,7 +41,7 @@ bool TcpStream::Send(const string& message) {
 
 bool TcpStream::Read(string* data, int num_bytes) {
   if (!valid_) return false;
-  
+
   char* buffer = new char[num_bytes + 1];
   memset(buffer, '\0', num_bytes + 1);
 
@@ -94,6 +92,8 @@ bool TcpStream::ReadTo(string* data, std::initializer_list<string> delims) {
 
 bool TcpStream::Open(const string& peer, int port) {
   port_ = port;
+
+  // Require a connection over IPv4 using a TCP socket.
   addrinfo hints {
       0,            // flags
       AF_INET,      // address family
@@ -105,20 +105,20 @@ bool TcpStream::Open(const string& peer, int port) {
       nullptr       // link to next element (must be |null|)
   };
   addrinfo* results = new addrinfo;
-  int status(0);
+  int status = 0;
 
   status = getaddrinfo(
       peer.c_str(),
       std::to_string(port).c_str(),
       &hints,
-      &results
-  );
+      &results);
 
   if (status != 0) {
     // TODO(hxtk): log error
     return false;
   }
 
+  // Iterate over results until a usable connection is found.
   for (auto it = results; it != nullptr; it = it->ai_next) {
     socket_ = socket(it->ai_family, it->ai_socktype, it->ai_protocol);
     if (socket_ == -1 || connect(socket_, it->ai_addr, it->ai_addrlen) == -1) {
