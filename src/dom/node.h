@@ -4,8 +4,9 @@
 // Defines Document Object Model node according to
 // documentation found at:
 // https://www.w3.org/TR/WD-DOM/level-one-core.html
-// NOTE: Style is also based on this specification;
-//  deviations from the styleguide are intentional.
+//
+// NOTE: This is a willful violation of the style guide,
+// deferring to the format used by the above documentation
 
 #ifndef DOM_NODE_H_
 #define DOM_NODE_H_
@@ -16,7 +17,7 @@
 
 namespace dom {
 
-using NodeList = std::list<Node>;
+using NodeList = std::list<Node*>;
 using AttributeMap = std::unordered_map<std::string, std::string>;
 
 class Node {
@@ -36,13 +37,22 @@ class Node {
     kDocumentType = 11
   };
 
+  Node(NodeType type) {
+    type_ = type;
+  }
+  ~Node() {
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+      delete it;
+    }
+  }
+
   // Attribute accessors and mutators
-  virtual std::string nodeName() const = 0;
-  virtual std::string nodeValue() const = 0;
-  virtual std::string nodeType() const = kDummyType;
-  virtual void setNodeValue(const std::string&);
-  virtual AttributeMap* attributes() const = nullptr;
-  
+  virtual std::string* nodeName() const = nullptr;
+  virtual std::string* nodeValue() const = nullptr;
+  virtual std::string* nodeType() const = kDummyType;
+  virtual void setNodeValue(const std::string& value);
+  virtual NodeList* attributes() const = nullptr;
+
   // Family accessors and mutators
   Node* parentNode() const;
   Element* parentElement() const;
@@ -54,17 +64,17 @@ class Node {
   virtual Node* firstChild() const = nullptr;
   virtual Node* lastChild() const = nullptr;
 
-  
   Node* insertBefore(Node* new_child, const Node* ref_child);
   Node* replaceChild(Node* new_child, const Node* old_child);
-  
+
   bool hasChildren() const { return firstChild() != nullptr; }
   bool isEqualNode(const Node* other) const;
   bool isSameNode(const Node* other) const { return this == other; }
-  
+
  private:
-  
-};
-}
+  NodeType type_ = kDummyType;
+  NodeList children_ = {};
+};  // class Node
+}  // namespace dom
 
 #endif  // DOM_NODE_H_
