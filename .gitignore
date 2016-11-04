@@ -1,0 +1,6 @@
+obj/*
+test/*
+build/*
+*.o
+*.a
+*~
