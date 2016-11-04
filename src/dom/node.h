@@ -17,6 +17,9 @@
 
 namespace dom {
 
+class Node;
+class Element;
+
 using NodeList = std::list<Node*>;
 using AttributeMap = std::unordered_map<std::string, std::string>;
 
@@ -40,18 +43,18 @@ class Node {
   Node(NodeType type) {
     type_ = type;
   }
-  ~Node() {
+  virtual ~Node() {
     for (auto it = children_.begin(); it != children_.end(); ++it) {
-      delete it;
+      delete *it;
     }
   }
 
   // Attribute accessors and mutators
-  virtual std::string* nodeName() const = nullptr;
-  virtual std::string* nodeValue() const = nullptr;
-  virtual std::string* nodeType() const = kDummyType;
+  virtual std::string* nodeName() const { return nullptr; }
+  virtual std::string* nodeValue() const { return nullptr; }
+  virtual NodeType nodeType() const { return kDummyType; }
   virtual void setNodeValue(const std::string& value);
-  virtual NodeList* attributes() const = nullptr;
+  virtual NodeList* attributes() const { return nullptr; }
 
   // Family accessors and mutators
   Node* parentNode() const;
@@ -60,20 +63,21 @@ class Node {
   Node* previousSibling() const;
 
   // Some nodes cannot have children
-  virtual NodeList* childNodes() const = nullptr;
-  virtual Node* firstChild() const = nullptr;
-  virtual Node* lastChild() const = nullptr;
+  virtual NodeList* childNodes() const { return nullptr; }
+  virtual Node* firstChild() const { return nullptr; }
+  virtual Node* lastChild() const { return nullptr; }
 
   Node* insertBefore(Node* new_child, const Node* ref_child);
   Node* replaceChild(Node* new_child, const Node* old_child);
 
-  bool hasChildren() const { return firstChild() != nullptr; }
-  bool isEqualNode(const Node* other) const;
+  virtual bool isEqualNode(const Node* other) const = 0;
+  bool hasChildren() const { return (this->firstChild() != nullptr); }
   bool isSameNode(const Node* other) const { return this == other; }
 
  private:
   NodeType type_ = kDummyType;
   NodeList children_ = {};
+
 };  // class Node
 }  // namespace dom
 

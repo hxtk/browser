@@ -15,15 +15,11 @@ class Document : public Node {
  public:
   Document() : Node(Node::kDocument) {}
 
-  std::string* nodeName() override { return &kNodeName; }
-  std::string* nodeValue() override { return &node_value_; }
-  void setNodeValue(const std::string& value) override {
-    node_value_ = value;
+  std::string* nodeName() const override {
+    return const_cast<std::string*>(&kNodeName);
   }
  private:
-  static constexpr std::string kNodeName = "#text";
-
-  std::string node_value_ = "";
+  const std::string kNodeName = "#document";
 };  // class Element
 }  // namespace dom
 

@@ -14,17 +14,17 @@ namespace dom {
 class Element : public Node {
  public:
   Element() : Node(Node::kElement) {}
-  ~Element() : ~Node() {
-    for (auto it = attributes_.begin(); it != attributes_.end(); ++it) {
-      delete it;
-    }
+  ~Element() override {
+    delete attributes_;
   }
 
-  std::string* nodeName() override { return &tag_name_; }
-  NodeList* attributes() override { return &attributes_; }
+  std::string* nodeName() const override {
+    return const_cast<std::string*>(&tag_name_);
+  }
+  NodeList* attributes() const override { return attributes_; }
  private:
   std::string tag_name_ = "";
-  NodeList attributes_ = {};
+  NodeList* attributes_ = new NodeList();
 };  // class Element
 }  // namespace dom
 
