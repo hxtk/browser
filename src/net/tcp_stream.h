@@ -86,7 +86,8 @@ class TcpStream {
 
   int port_ = -1;    // Initialized to invalid port
   int socket_ = -1;  // Initialized to error socket value
-  bool valid_ = false;
+  bool valid_ = false;  // A fresh instance has not been connected
+                        // and therefore cannot be  valid
 };  // class TcpStream
 }  // namespace net
 

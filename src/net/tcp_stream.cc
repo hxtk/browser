@@ -64,6 +64,8 @@ bool TcpStream::ReadTo(string* data, const string& delim) {
   while (data->find(delim, offset) == string::npos) {
     int status = recv(socket_, &buffer, 1, 0);
     if (status < 1) {
+      // If |status = 0|, no data was read but the socket may still be good
+      // However, if |status = -1|, there is an error
       if (status  == -1) valid_ = false;
       return false;
     }
@@ -92,12 +94,13 @@ bool TcpStream::ReadTo(string* data, std::initializer_list<string> delims) {
 
 bool TcpStream::Open(const string& peer, int port) {
   port_ = port;
+  valid_ = false;
 
   // Require a connection over IPv4 using a TCP socket.
   addrinfo hints {
       0,            // flags
-      AF_INET,      // address family
-      SOCK_STREAM,  // Require TCP socket
+      AF_INET,      // address family (we require IPv4)
+      SOCK_STREAM,  // socket type (we require TCP)
       0,            // protocol
       0,            // address length (must be |0|)
       nullptr,      // struct sockaddr (must be |null|)
@@ -107,6 +110,12 @@ bool TcpStream::Open(const string& peer, int port) {
   addrinfo* results = new addrinfo;
   int status = 0;
 
+  // Get a linked list of address info conforming to
+  // the specification in |hints|.
+  //
+  // Store the result in |results|.
+  // RETURN status: 0 on success.
+  // see: `man getaddrinfo` for additional documentation
   status = getaddrinfo(
       peer.c_str(),
       std::to_string(port).c_str(),
@@ -125,15 +134,23 @@ bool TcpStream::Open(const string& peer, int port) {
       socket_ = -1;
       continue;
     }
+
+    // If execution reaches this point, a valid connection has been made
+    // and the variables are set up before exiting the loop.
+
+    // IPv4 addresses consist of 4 8-bit unsigned integers separated by dots,
+    // i.e., 32 bits total. |in_addr| stores these in network order, i.e.,
+    // big-endian, and as such it must be converted to host byte order, which
+    // is not formally defined. |ntoh*| and |hton*| determine these at compile
+    // time to allow for greater portability of code.
     peer_ip_ = ntohl(
         reinterpret_cast<sockaddr_in*>(it->ai_addr)->sin_addr.s_addr);
-    freeaddrinfo(results);
+
     valid_ = true;
-    return true;
+    break;
   }
   freeaddrinfo(results);
-  valid_ = false;
-  return false;
+  return valid_;
 }
 
 bool TcpStream::DelimFound(
