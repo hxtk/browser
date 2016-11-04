@@ -1,3 +1,6 @@
+# Copyright: Peter Sanders. All rights reserved.
+# Date: 2016-11-03
+
 OBJ = obj
 SRC = src
 BUILD = build
